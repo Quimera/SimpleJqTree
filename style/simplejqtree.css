@@ -1,0 +1,42 @@
+.tree, 
+.tree ul, 
+.tree li {
+    list-style: none outside none;
+    margin: 0;
+    padding: 0;
+}
+.tree ul {
+    margin-left:16px;
+}
+.arrow, 
+.icon,
+.dummy {
+    width:16px;
+    height:16px;
+}
+.arrow {
+    background:url(images/bullet_arrow.png) no-repeat scroll 0 0 transparent;
+    cursor:pointer;    
+}
+img.arrow:hover {
+    background:url(images/bullet_arrow.png) no-repeat scroll -16px 0 transparent;
+}
+.opened > img.arrow {
+    background:url(images/bullet_arrow.png) no-repeat scroll -32px 0 transparent;
+}
+.opened > img.arrow:hover {
+    background:url(images/bullet_arrow.png) no-repeat scroll -48px 0 transparent;
+}
+
+.folderish .container{
+    display:none;
+}
+.folder img{
+    background:url(images/folder.png) no-repeat scroll 0 0 transparent;
+}
+.opened > .folder img{
+    background:url(images/folder-open.png) no-repeat scroll 0 0 transparent;
+}
+.page img {
+    background:url(images/page.png) no-repeat scroll 0 0 transparent;    
+}

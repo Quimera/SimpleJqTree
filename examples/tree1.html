@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+    <head>
+            <title>Tree Example</title>    
+    		<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />    
+
+            <link rel="stylesheet" type="text/css" href="../style/simplejqtree.css" />
+            
+            <script type="text/javascript" src="../jquery-1.6.2.min.js"></script>    		
+            <script type="text/javascript" src="../jquery.simplejqtree.js"></script>
+            <script type="text/javascript">
+                $(document).ready(function() {
+                    // Handler for .ready() called.
+                    $('#tree').simplejqtree();  
+                });
+            </script>
+    </head>
+    <body>
+        <ul id="tree">
+            <li>
+                <a class="folder" href="#">test 1</a>
+                <ul></ul>
+            </li>
+            <li>
+                <a class="folder" href="#">test 2</a>
+                <ul>
+                    <li>
+                        <a class="page" href="#">test 1</a>
+                    </li>
+                    <li>
+                        <a class="page" href="#">test 2</a>
+                    </li>
+                    <li>
+                        <a class="folder" href="#">test 3</a>
+                        <ul>
+                            <li>
+                                <a class="folder" href="#"> folder 4</a>
+                                <ul></ul>
+                            </li>
+                            <li>
+                                <a class="page" href="#"> test 4</a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </li>
+            <li>
+                <a class="page" href="#">test 3</a>
+            </li>
+            <li>
+                <a class="page" href="#">test 4</a>
+            </li>
+        </ul>
+    </body>
+</html>

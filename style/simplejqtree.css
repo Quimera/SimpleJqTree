@@ -1,4 +1,4 @@
-/*BASIC TREE STYLE you can override this very easy*/
+/*BASIC TREE STYLE*/
 .tree {
     color:#000;
     font-size:12px;
@@ -40,13 +40,13 @@
     cursor:pointer;
 }
 img.arrow:hover {
-    background:url(images/bullet_arrow.png) no-repeat scroll -16px 0 transparent;
+    background-position:-16px 0;
 }
 .opened > img.arrow {
-    background:url(images/bullet_arrow.png) no-repeat scroll -32px 0 transparent;
+    background-position:-32px 0;
 }
 .opened > img.arrow:hover {
-    background:url(images/bullet_arrow.png) no-repeat scroll -48px 0 transparent;
+    background-position:-48px 0;
 }
 
 .folderish .container{

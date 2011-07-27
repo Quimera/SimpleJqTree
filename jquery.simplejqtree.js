@@ -1,134 +1,172 @@
-(function( $ ){
+(function($) {
 
-    $.fn.simplejqtree = function(options) {  
-
-        var settings = {
-            'ajax'           : false, //an ajax call?
-            'ajax_handler'   : {},    //the ajax method used to do the ajax call
-            'action_handler' : {}     //the action to trigger when a non-folderish item is "clicked"
-        };
-
-        return this.each(function() {        
-            if ( options ) { 
-                $.extend( settings, options );
-            }
-
-            //lets format the tree
-            tree_elements = $.fn.simplejqtree.formatMarkup(this, settings.ajax);
-            $.fn.simplejqtree.eventsSetup( tree_elements, settings.ajax_handler, settings.action_handler );
-
+    //helper function
+    function attr_instancer(attr, toinstance){
+        var result = {};
+        $.each(attr, function(){
+            result[this] = toinstance[attr[this]];
         });
-
-    };
-
-
-    //Public functions
-    $.fn.simplejqtree.formatMarkup = function( tree, ajax ) {
-  
-        var empty_image = '<img class="dummy" alt="icon" src="data:image/gif;base64,R0lGODlhAQABAID/AMDAwAAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==">';
-        var items = $('a', tree).prepend($(empty_image)
-                                .addClass('icon'));
-        var branches = $('li', tree).prepend(empty_image);
-
-        branches.each(function(){
-            var container = $('> ul', $(this)).addClass('container');
-          
-            if (container[0]) {
-                $(this).addClass('folderish').children('img')
-                                             .addClass('arrow');
-            }
-        });
-
-        if (!ajax) {
-            $(tree).addClass('tree');
-        } else {
-            $(tree).addClass('container');
-        }
-
-        return items;
-    };
-
-
-    $.fn.simplejqtree.eventsSetup = function( items, ajax_handler, action_handler ) {
-        items.bind('click.simplejqtree',  function(event){
-            event.preventDefault();      
-            var container = $(this).siblings('.container');
-            var branch = $(this).parent('.folderish');
+              
+        return result;
+    }
+    
+    //my constructor
+    function SimpleJqTree( item, conf ) {
+    
+        var self = this, 
+            trigger = item.add(self),
+            json_attr = conf.json_attr;
         
-            if ($(container).html() === '' && ajax_handler) {
-                var ajax_extended = $.extend(ajax_handler, {"dataType":'json'});
-                
-                $.ajax(ajax_extended).success(function(data) {
-                    var result = $.fn.simplejqtree.buildFromJSON(data);
-                    $('> ul', branch).remove();
-                    branch.append(result);
-                    result.simplejqtree({'ajax_handler':ajax_handler, 'ajax':true, 'action_handler':action_handler});
-                    var container = result;            
-                    slide_events(container, branch);
-                }).error(function(jqXHR, textStatus, errorThrown) {
-                    console.log(textStatus);          
-                    console.log(errorThrown);
+        item.addClass('tree');
+        //methods
+        $.extend(self, {
+            markup: function(tree){
+                var $tree = $(tree),
+                    placeholder = '<img class="dummy" alt="icon" src="data:image/gif;base64,R0lGODlhAQABAID/AMDAwAAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==">',
+                    branches = $tree.find('li').prepend(placeholder);
+                self.items = $tree.find('a').prepend($(placeholder).addClass('icon'));
+
+                branches.each(function() {
+                    var container = $(this).find('> ul').addClass('container');
+
+                    if (container[0]) {
+                        $(this).addClass('folderish')
+                                        .children('img').addClass('arrow');
+                    }
                 });
-            } else {
-                slide_events(container, branch);
-            }
+            },
             
-            action_handler_launcher($(this), action_handler);
+            build_from_JSON: function(json) {
+                var tree = $('<ul class="root"><ul/>'),
+                    stack = [];
+
+                stack.push($(json));
+                
+                //Depth First Search
+                while(stack[0]){
+                    currentnode = stack.shift();
+                    
+                    $.each(currentnode, function(i, node){
+                        //lets fletch the json attrs
+                        attr = attr_instancer(json_attr, node);
+                                            
+                        //node markup
+                        li = $('<li><a href="#">' + this.title + '</a></li>');
+                        li.find('> a').addClass(node.metatype)
+                                      .attr(attr);
+                        tree.append(li);
+                        
+                        if (node.children){
+                            //has children, then is a container.
+                            tree = tree.find('li:last').append('<ul/>')
+                                                       .find('> ul');
+                            stack.push(node.children);
+                        }
+                    });
+                }
+
+                return tree.parents('.root');
+            },
+            
+            click: function(e){
+                var $this = $(e.currentTarget),
+                    container = $this.siblings('.container'),
+                    branch = $this.parent('.folderish');
+                
+                //bind the trigger event for close and open
+                //and manage the ajax handler
+                if (container[0]) {
+                    if (container.html() === '' && conf.ajax_handler) {
+                        //ajax magic
+                        self.ajax_call(branch);
+                    } else {
+                        self.slide(container);
+                    }
+                } else {
+                    conf.action_handler($this);
+                }
+            },
+
+            slide: function(container) {
+                var branch = container.parent('.folderish');
+                if (container.css('display') == 'none') {
+                    container.slideDown('fast', function() {
+                        branch.addClass('opened');
+                    });
+                } else {
+                    container.slideUp('fast', function() {
+                        branch.removeClass('opened');
+                    });
+                }
+            },
+            
+            ajax_call: function(branch){
+                //TODO we need to implement a callback funcion, so we can
+                //do things after the ajax method finalization
+                var ajax_extended = $.extend(conf.ajax_handler, {
+                    'dataType': 'json',
+                    'success': function(data) {
+                        var result = self.build_from_JSON(data);
+                        $('> ul', branch).remove();
+                        branch.append(result);
+                        self.markup(result);
+                    }
+                });
+
+                $.ajax(ajax_extended);            
+            },
             
         });
-        items.each(function(){
+
+        //adjust markup
+        self.markup(item);
+        
+        //events setup
+        self.items.each(function(){
             var $this = $(this);
-            $this.siblings('.arrow').click(function(){
+            
+            $this.bind('click.simplejqtree', function(event) {
+                //TODO we can mantain a list of nodes in memory, then access those nodes
+                //using an index, in that way we can save some instances and
+                //jquery traversing
+                self.click(event);         
+                return event.preventDefault();
+            });
+            
+            //little arrows should launch the click event
+            $this.siblings('.arrow').click(function() {
                 $this.trigger('click.simplejqtree');
             });
+            
         });
-    
-        function slide_events(container, branch){
-            if (container.css('display') == 'none'){
-                container.slideDown('fast', function(){
-                    branch.addClass('opened');          
-                });
-            } else {
-                container.slideUp('fast', function(){
-                    branch.removeClass('opened');                    
-                });
-            }    
+    }
+
+    // jQuery plugin implementation
+    $.fn.simplejqtree = function(options) {
+
+        // already instanced, return the data object
+        var el = this.data("simplejqtree");
+        if (el) { return el; }
+
+        //default settings, maybe its a good idea move this to a general conf
+        var settings = {
+            'ajax_handler': {}, //the ajax method used to do the ajax call
+            'action_handler': {}, //the action to trigger when a non-folderish item is "clicked"
+            'json_attr':{
+                'id':'id',
+                'href':'href',
+                'rel':'rel'
+            }
         };
+
+        if (options) {
+            $.extend(settings, options);
+        }
         
-        function action_handler_launcher(item, action_handler) {
-            if ( typeof action_handler === 'function' && !item.parent('.folderish')[0]) {
-                action_handler(item);
-            }
-        }
-    };
-
-
-    $.fn.simplejqtree.buildFromJSON = function (json, parent) {
-        if (!parent){
-            parent = $('<ul></ul>');
-        }else {
-            parent = $('> ul', parent.append($('<ul></ul>'))).filter(":last");
-        }
-        $(json).each(function(){
-            var li = $('<li><a href="#">'+this.title+'</a></li>');
-            li.addClass(this.opened ? 'opened': undefined);
-            $('> a', li).addClass(this.metatype)
-                        .attr({
-                            'id': this.id, 
-                            'href': this.href
-                        });
-            parent.append(li);
-            var folderish = this.folderish;
-            var has_child = this.children;
-            if (folderish) {
-                if (has_child) {
-                    $.fn.simplejqtree.buildFromJSON(has_child, $('> li', parent));
-                } else {
-                    li.prepend('<ul></ul>');
-                }
-            }
+        return this.each(function() {
+            el = new SimpleJqTree($(this), settings);
+            $(this).data("simplejqtree", el);
         });
-        return parent;
     };
-    
-})( jQuery );
+
+})(jQuery);
